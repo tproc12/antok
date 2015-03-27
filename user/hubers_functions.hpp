@@ -493,12 +493,13 @@ namespace antok {
 									iMax = i;
 								}
 							}
-							*_maximumX = (*_VectorXAddr)[iMax];
-							*_maximumY = (*_VectorYAddr)[iMax];
-							*_maximumZ = (*_VectorZAddr)[iMax];
-							*_maximumT = (*_VectorTAddr)[iMax];
-							if(iMax >= 0)
+							if(iMax >= 0){
+								*_maximumX = (*_VectorXAddr)[iMax];
+								*_maximumY = (*_VectorYAddr)[iMax];
+								*_maximumZ = (*_VectorZAddr)[iMax];
+								*_maximumT = (*_VectorTAddr)[iMax];
 								*_maximumE = (*_VectorEAddr)[iMax];
+							}
 							else
 								*_maximumE = -99;
 							return true;
