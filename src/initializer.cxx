@@ -657,8 +657,8 @@ bool antok::Initializer::initializePlotter() {
 					std::cerr<<"\"Variables\", \"LowerBounds\", \"UpperBounds\" and \"NBins\" all need to be sequences (in \"Plot\" \""<<plotName<<"\")."<<std::endl;
 					return false;
 				}
-				if(plot["Variables"].size() > 2) {
-					std::cerr<<"Cannot have \"Plot\" \""<<plotName<<"\" with more than 2 \"Variables\""<<std::endl;
+				if(plot["Variables"].size() > 3) {
+					std::cerr<<"Cannot have \"Plot\" \""<<plotName<<"\" with more than 3 \"Variables\""<<std::endl;
 					return false;
 				}
 				if((plot["Variables"].size() != plot["LowerBounds"].size()) or
@@ -670,6 +670,8 @@ bool antok::Initializer::initializePlotter() {
 				}
 				if(plot["Variables"].size() == 2) {
 					antokPlot = antok::generators::generate2DPlot(plot, plotOptions);
+				} else if (plot["Variables"].size() == 3) {
+					antokPlot = antok::generators::generate3DPlot(plot, plotOptions);
 				} else if (plot["Variables"].size() == 1) {
 					antokPlot = antok::generators::generate1DPlot(plot, plotOptions);
 				} else {
@@ -677,7 +679,7 @@ bool antok::Initializer::initializePlotter() {
 					return false;
 				}
 			} else {
-				std::cerr<<"\"Variables\" implies 2D plot and needs to be a list (in \"Plot\" \""<<plotName<<"\")."<<std::endl;
+				std::cerr<<"\"Variables\" implies 2D/3D plot and needs to be a list (in \"Plot\" \""<<plotName<<"\")."<<std::endl;
 				return false;
 			}
 		} else if(hasNodeKey(plot, "Variable")) {

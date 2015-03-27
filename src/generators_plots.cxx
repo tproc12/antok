@@ -2,6 +2,7 @@
 
 #include<TH1D.h>
 #include<TH2D.h>
+#include<TH3D.h>
 
 #include<cutter.h>
 #include<object_manager.h>
@@ -397,6 +398,217 @@ antok::Plot* antok::generators::generate2DPlot(const YAML::Node& plot, const ant
 			                                            new TH2D(plotName.c_str(), plotNameWithAxisLables.c_str(), nBins1, lowerBound1, upperBound1, nBins2, lowerBound2, upperBound2),
 			                                            vec1Data,
 			                                            vec2Data);
+		} else if(variableType == "") {
+			std::cerr<<"Could not find \"Variable\" \""<<variable1Name<<"\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+			return 0;
+		} else {
+			std::cerr<<"\"Variable\"'s type \""<<variableType<<"\" not supported by \"Plot\" (in \""<<plotName<<"\")."<<std::endl;
+			return 0;
+		}
+
+	}
+
+	return antokPlot;
+
+}
+
+antok::Plot* antok::generators::generate3DPlot(const YAML::Node& plot, const antok::plotUtils::GlobalPlotOptions& plotOptions) {
+
+	using antok::YAMLUtils::hasNodeKey;
+
+	std::string plotName = antok::YAMLUtils::getString(plot["Name"]);
+	std::string plotNameWithAxisLables = __getPlotNameWithAxisLabels(plot);
+	if(plotNameWithAxisLables == "") {
+		std::cerr<<"Could not get plot name with axis labels in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+
+	double lowerBound1 = 0.;
+	if(not antok::YAMLUtils::getValue<double>(plot["LowerBounds"][0], &lowerBound1)) {
+		std::cerr<<"Could not get first of the \"LowerBounds\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	double lowerBound2 = 0.;
+	if(not antok::YAMLUtils::getValue<double>(plot["LowerBounds"][1], &lowerBound2)) {
+		std::cerr<<"Could not get second of the \"LowerBounds\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	double lowerBound3 = 0.;
+	if(not antok::YAMLUtils::getValue<double>(plot["LowerBounds"][2], &lowerBound3)) {
+		std::cerr<<"Could not get third of the \"LowerBounds\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+
+	double upperBound1 = 0.;
+	if(not antok::YAMLUtils::getValue<double>(plot["UpperBounds"][0], &upperBound1)) {
+		std::cerr<<"Could not get first of the \"UpperBounds\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	if(lowerBound1 >= upperBound1){
+		std::cerr<<"\"LowerBoundX\" >= \"UpperBoundX\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	double upperBound2 = 0.;
+	if(not antok::YAMLUtils::getValue<double>(plot["UpperBounds"][1], &upperBound2)) {
+		std::cerr<<"Could not get second of the \"UpperBounds\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	if(lowerBound2 >= upperBound2){
+		std::cerr<<"\"LowerBoundY\" >= \"UpperBoundY\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	double upperBound3 = 0.;
+	if(not antok::YAMLUtils::getValue<double>(plot["UpperBounds"][2], &upperBound3)) {
+		std::cerr<<"Could not get third of the \"UpperBounds\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	if(lowerBound3 >= upperBound3){
+		std::cerr<<"\"LowerBoundZ\" >= \"UpperBoundZ\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+
+	int nBins1 = 0;
+	if(not antok::YAMLUtils::getValue<int>(plot["NBins"][0], &nBins1)) {
+		std::cerr<<"Could not get first of the \"NBins\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	int nBins2 = 0;
+	if(not antok::YAMLUtils::getValue<int>(plot["NBins"][1], &nBins2)) {
+		std::cerr<<"Could not get second of the \"NBins\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	int nBins3 = 0;
+	if(not antok::YAMLUtils::getValue<int>(plot["NBins"][2], &nBins3)) {
+		std::cerr<<"Could not get third of the \"NBins\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+
+	std::string variable1Name = antok::YAMLUtils::getString(plot["Variables"][0]);
+	if(variable1Name == "") {
+		std::cerr<<"First of the \"Variables\" entries invalid for \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	std::string variable2Name = antok::YAMLUtils::getString(plot["Variables"][1]);
+	if(variable2Name == "") {
+		std::cerr<<"Second of the \"Variables\" entries invalid for \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+	std::string variable3Name = antok::YAMLUtils::getString(plot["Variables"][2]);
+	if(variable3Name == "") {
+		std::cerr<<"Third of the \"Variables\" entries invalid for \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		return 0;
+	}
+
+	antok::Data& data = ObjectManager::instance()->getData();
+	std::map<std::string, std::vector<long> > cutmasks;
+	if(hasNodeKey(plot, "CustomCuts")) {
+		if(not antok::Plotter::handleAdditionalCuts(plot["CustomCuts"], cutmasks)) {
+			std::cerr<<"Warning: There was a problem when processing the \"CustomCuts\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+		}
+	}
+	__getCutmasks(plotOptions, cutmasks);
+
+	antok::Plot* antokPlot = 0;
+
+	if(not hasNodeKey(plot, "Indices")) {
+
+		std::string variableType = data.getType(variable1Name);
+		std::string variable2Type = data.getType(variable2Name);
+		std::string variable3Type = data.getType(variable3Name);
+		if(variableType != variable2Type) {
+			std::cerr<<"Cannot plot 3D \"Plot\" \""<<plotName<<"\" with \"Variables\" of different type (\""<<variableType<<"\"<>\""<<variable2Type<<"\")."<<std::endl;
+			return 0;
+		}
+		if(variableType != variable3Type) {
+			std::cerr<<"Cannot plot 3D \"Plot\" \""<<plotName<<"\" with \"Variables\" of different type (\""<<variableType<<"\"<>\""<<variable3Type<<"\")."<<std::endl;
+			return 0;
+		}
+
+		if(variableType == "double") {
+			antokPlot = new antok::TemplatePlot<double>(cutmasks,
+			                                            new TH3D(plotName.c_str(), plotNameWithAxisLables.c_str(), nBins1, lowerBound1, upperBound1, nBins2, lowerBound2, upperBound2, nBins3, lowerBound3, upperBound3),
+			                                            data.getAddr<double>(variable1Name),
+			                                            data.getAddr<double>(variable2Name),
+			                                            data.getAddr<double>(variable3Name));
+		} else if (variableType == "int") {
+			antokPlot = new antok::TemplatePlot<int>(cutmasks,
+			                                         new TH3D(plotName.c_str(), plotNameWithAxisLables.c_str(), nBins1, lowerBound1, upperBound1, nBins2, lowerBound2, upperBound2, nBins3, lowerBound3, upperBound3),
+			                                         data.getAddr<int>(variable1Name),
+			                                         data.getAddr<int>(variable2Name),
+			                                         data.getAddr<int>(variable3Name));
+		} else if (variableType == "std::vector<double>") {
+			antokPlot = new antok::TemplatePlot<double>(cutmasks,
+			                                            new TH3D(plotName.c_str(), plotNameWithAxisLables.c_str(), nBins1, lowerBound1, upperBound1, nBins2, lowerBound2, upperBound2, nBins3, lowerBound3, upperBound3),
+			                                            data.getAddr<std::vector<double> >(variable1Name),
+			                                            data.getAddr<std::vector<double> >(variable2Name),
+			                                            data.getAddr<std::vector<double> >(variable3Name));
+		} else if(variableType == "") {
+			std::cerr<<"Could not find \"Variable\" \""<<variable1Name<<"\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
+			return 0;
+		} else {
+			std::cerr<<"\"Variable\"'s type \""<<variableType<<"\" not supported by \"Plot\" (in \""<<plotName<<"\")."<<std::endl;
+			return 0;
+		}
+
+	} else {
+		std::vector<int> indices = __getIndices(plot, plotName);
+		if(indices.empty()) {
+			return 0;
+		}
+		std::stringstream strStr;
+		strStr<<variable1Name<<indices[0];
+		std::string variableType = data.getType(strStr.str());
+		strStr.str("");
+		strStr<<variable2Name<<indices[0];
+		std::string variable2Type =  data.getType(strStr.str());
+		strStr.str("");
+		strStr<<variable3Name<<indices[0];
+		std::string variable3Type =  data.getType(strStr.str());
+		if(variableType != variable2Type) {
+			std::cerr<<"Cannot plot 3D \"Plot\" \""<<plotName<<"\" with \"Variables\" of different type (\""<<variableType<<"\"<>\""<<variable2Type<<"\")."<<std::endl;
+			return 0;
+		}
+		if(variableType != variable3Type) {
+			std::cerr<<"Cannot plot 3D \"Plot\" \""<<plotName<<"\" with \"Variables\" of different type (\""<<variableType<<"\"<>\""<<variable3Type<<"\")."<<std::endl;
+			return 0;
+		}
+
+		if(variableType == "double") {
+			std::vector<double*>* vec1Data = __getDataVector<double>(plot, plotName, variable1Name, indices);
+			std::vector<double*>* vec2Data = __getDataVector<double>(plot, plotName, variable2Name, indices);
+			std::vector<double*>* vec3Data = __getDataVector<double>(plot, plotName, variable3Name, indices);
+			if((not vec1Data) or (not vec2Data) or (not vec3Data)) {
+				return 0;
+			}
+			antokPlot = new antok::TemplatePlot<double>(cutmasks,
+			                                            new TH3D(plotName.c_str(), plotNameWithAxisLables.c_str(), nBins1, lowerBound1, upperBound1, nBins2, lowerBound2, upperBound2, nBins3, lowerBound3, upperBound3),
+			                                            vec1Data,
+			                                            vec2Data,
+			                                            vec3Data);
+		} else if(variableType == "int") {
+			std::vector<int*>* vec1Data = __getDataVector<int>(plot, plotName, variable1Name, indices);
+			std::vector<int*>* vec2Data = __getDataVector<int>(plot, plotName, variable2Name, indices);
+			std::vector<int*>* vec3Data = __getDataVector<int>(plot, plotName, variable3Name, indices);
+			if((not vec1Data) or (not vec2Data) or (not vec2Data) ) {
+				return 0;
+			}
+			antokPlot = new antok::TemplatePlot<int>(cutmasks,
+			                                         new TH3D(plotName.c_str(), plotNameWithAxisLables.c_str(), nBins1, lowerBound1, upperBound1, nBins2, lowerBound2, upperBound2, nBins3, lowerBound3, upperBound3),
+			                                         vec1Data,
+			                                         vec2Data,
+			                                         vec3Data);
+		} else if(variableType == "std::vector<double>") {
+			std::vector<std::vector<double>*>* vec1Data = __getDataVector<std::vector<double> >(plot, plotName, variable1Name, indices);
+			std::vector<std::vector<double>*>* vec2Data = __getDataVector<std::vector<double> >(plot, plotName, variable2Name, indices);
+			std::vector<std::vector<double>*>* vec3Data = __getDataVector<std::vector<double> >(plot, plotName, variable3Name, indices);
+			if((not vec1Data) or (not vec2Data) or (not vec3Data)) {
+				return 0;
+			}
+			antokPlot = new antok::TemplatePlot<double>(cutmasks,
+			                                            new TH3D(plotName.c_str(), plotNameWithAxisLables.c_str(), nBins1, lowerBound1, upperBound1, nBins2, lowerBound2, upperBound2, nBins3, lowerBound3, upperBound3),
+			                                            vec1Data,
+			                                            vec2Data,
+			                                            vec3Data);
 		} else if(variableType == "") {
 			std::cerr<<"Could not find \"Variable\" \""<<variable1Name<<"\" in \"Plot\" \""<<plotName<<"\"."<<std::endl;
 			return 0;

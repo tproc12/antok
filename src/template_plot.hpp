@@ -23,22 +23,26 @@ namespace antok {
 		TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
 		             TH1* hist_template,
 		             T* data1,
-		             T* data2 = 0);
+		             T* data2 = 0,
+		             T* data3 = 0);
 
 		TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
 		             TH1* hist_template,
 		             std::vector<T*>* data1,
-		             std::vector<T*>* data2 = 0);
+		             std::vector<T*>* data2 = 0,
+		             std::vector<T*>* data3 = 0);
 
 		TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
 		             TH1* hist_template,
 		             std::vector<T>* data1,
-		             std::vector<T>* data2 = 0);
+		             std::vector<T>* data2 = 0,
+		             std::vector<T>* data3 = 0);
 
 		TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
 		             TH1* hist_template,
 		             std::vector<std::vector<T>*>* data1,
-		             std::vector<std::vector<T>*>* data2 = 0);
+		             std::vector<std::vector<T>*>* data2 = 0,
+		             std::vector<std::vector<T>*>* data3 = 0);
 
 		void fill(long cutmask);
 
@@ -56,15 +60,19 @@ namespace antok {
 
 		std::vector<T*>* _vecData1;
 		std::vector<T*>* _vecData2;
+		std::vector<T*>* _vecData3;
 
 		std::vector<T>* _vecDataVector1;
 		std::vector<T>* _vecDataVector2;
+		std::vector<T>* _vecDataVector3;
 
 		std::vector<std::vector<T>*>* _multipleVecDataVectors1;
 		std::vector<std::vector<T>*>* _multipleVecDataVectors2;
+		std::vector<std::vector<T>*>* _multipleVecDataVectors3;
 
 		T* _data1;
 		T* _data2;
+		T* _data3;
 
 	};
 
@@ -74,14 +82,16 @@ template<typename T>
 antok::TemplatePlot<T>::TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
                                      TH1* histTemplate,
                                      T* data1,
-                                     T* data2)
+                                     T* data2,
+                                     T* data3)
 	: Plot(),
 	  _vecDataVector1(0),
 	  _vecDataVector2(0),
 	  _multipleVecDataVectors1(0),
 	  _multipleVecDataVectors2(0),
 	  _data1(data1),
-	  _data2(data2)
+	  _data2(data2),
+	  _data3(data3)
 {
 
 	assert(histTemplate != 0);
@@ -95,16 +105,21 @@ template<typename T>
 antok::TemplatePlot<T>::TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
                                      TH1* histTemplate,
                                      std::vector<T*>* vecData1,
-                                     std::vector<T*>* vecData2)
+                                     std::vector<T*>* vecData2,
+                                     std::vector<T*>* vecData3)
 	: Plot(),
 	  _vecData1(vecData1),
 	  _vecData2(vecData2),
+	  _vecData3(vecData3),
 	  _vecDataVector1(0),
 	  _vecDataVector2(0),
+	  _vecDataVector3(0),
 	  _multipleVecDataVectors1(0),
 	  _multipleVecDataVectors2(0),
+	  _multipleVecDataVectors3(0),
 	  _data1(0),
-	  _data2(0)
+	  _data2(0),
+	  _data3(0)
 {
 
 	assert(histTemplate != 0);
@@ -122,16 +137,21 @@ template<typename T>
 antok::TemplatePlot<T>::TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
                                      TH1* histTemplate,
                                      std::vector<T>* vecData1,
-                                     std::vector<T>* vecData2)
+                                     std::vector<T>* vecData2,
+                                     std::vector<T>* vecData3)
 	: Plot(),
 	  _vecData1(0),
 	  _vecData2(0),
+	  _vecData3(0),
 	  _vecDataVector1(vecData1),
 	  _vecDataVector2(vecData2),
+	  _vecDataVector3(vecData3),
 	  _multipleVecDataVectors1(0),
 	  _multipleVecDataVectors2(0),
+	  _multipleVecDataVectors3(0),
 	  _data1(0),
-	  _data2(0)
+	  _data2(0),
+	  _data3(0)
 {
 
 	assert(histTemplate != 0);
@@ -149,16 +169,21 @@ template<typename T>
 antok::TemplatePlot<T>::TemplatePlot(std::map<std::string, std::vector<long> >& cutmasks,
                                      TH1* histTemplate,
                                      std::vector<std::vector<T>*>* vecData1,
-                                     std::vector<std::vector<T>*>* vecData2)
+                                     std::vector<std::vector<T>*>* vecData2,
+                                     std::vector<std::vector<T>*>* vecData3)
 	: Plot(),
 	  _vecData1(0),
 	  _vecData2(0),
+	  _vecData3(0),
 	  _vecDataVector1(0),
 	  _vecDataVector2(0),
+	  _vecDataVector3(0),
 	  _multipleVecDataVectors1(vecData1),
 	  _multipleVecDataVectors2(vecData2),
+	  _multipleVecDataVectors3(vecData3),
 	  _data1(0),
-	  _data2(0)
+	  _data2(0),
+	  _data3(0)
 {
 
 	assert(histTemplate != 0);
@@ -183,8 +208,11 @@ void antok::TemplatePlot<T>::fill(long cutPattern) {
 				case 0: // Pointers to single variables
 					if(_data2 == 0) {
 						hist->Fill(*_data1);
-					} else {
+					} else if(_data3 == 0) {
 						hist->Fill(*_data1, *_data2);
+					}
+					else {
+						((TH3D*)hist)->Fill(*_data1, *_data2, *_data3);
 					}
 					break;
 				case 1: // Multiple values, 1 variable
